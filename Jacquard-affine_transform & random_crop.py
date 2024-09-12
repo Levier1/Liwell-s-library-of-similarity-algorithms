@@ -82,4 +82,4 @@ print(f"经过仿射变换后的杰卡德相似度: {jaccard_similarity_transfor
 # 计算随机裁剪后数据的杰卡德相似度
 jaccard_similarity_cropped = jaccard_score(flat_ground_truth1.astype(int), flat_cropped_data.astype(int),
                                            average='micro')
-print(f"经过随即裁剪的杰卡德相似度: {jaccard_similarity_cropped:7f}")
+print(f"经过随机裁剪的杰卡德相似度: {jaccard_similarity_cropped:7f}")

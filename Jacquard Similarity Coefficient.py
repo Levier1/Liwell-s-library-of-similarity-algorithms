@@ -34,7 +34,7 @@ categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
 newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
 
 # 只选择一部分数据进行演示
-documents = newsgroups_train.data[:10000]
+documents = newsgroups_train.data[:1000]
 
 # 初始化文本向量化器
 vectorizer = CountVectorizer()
@@ -127,4 +127,4 @@ for i in range(len(X)):
 mean_jacquard_similarity = np.mean(jacquard_similarities)
 
 # 输出结果
-print(f"经过随机亮度调整后的平均杰卡德相似度: {mean_jacquard_similarity:.7f}")
+print(f"经过随机亮度调整后的平均杰卡德相似系数: {mean_jacquard_similarity:.7f}")

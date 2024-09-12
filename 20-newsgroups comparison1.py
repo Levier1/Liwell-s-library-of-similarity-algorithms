@@ -49,7 +49,7 @@ def compute_manhattan_distance(X, index, random_indices):
     return all_distances
 
 # 用户设置的参数n
-n = 10  # 可以根据需要设置参数n的值
+n = 3  # 可以根据需要设置参数n的值
 
 # 获取随机选择的文档索引
 index = get_random_index(X.shape[0])
