@@ -82,24 +82,16 @@ rotated_data = rotated_images[:, :400]
 similarity_scores1 = []
 for i in range(len(original_data)):
     if np.std(original_data[i]) != 0 and np.std(rotated_data[i]) != 0:
-        similarity = np.corrcoef(original_data[i], rotated_data[i])[0, 1]  # 使用皮尔逊相关系数作为相似度度量
-        # 当然这里的测量方式也是多变的 但这里选择了皮尔逊相关系数是因为这里用余弦相似度做度量老是产生报错
-        # 报错的大致原因：我认为是数组数据转换并且计算的时候出现了问题
-        # 毕竟文本数据不像图像数据那样可以直接进行几何变换 这里我考虑将文本转换为图像格式进行处理
-        # 所以在使用余弦相似度做度量进行计算时会出现以上问题
+        similarity = np.corrcoef(original_data[i], rotated_data[i])[0, 1]  # 使用皮尔逊相关系数进行去中心化
     else:
         similarity = 0  # 标准差为零时，相似度设为0或者其他处理方式
     similarity_scores1.append(similarity)
 
-# 格式划计算结果
-formatted_similarity_scores1 = ["{:.7f}".format(similarity) for similarity in similarity_scores1]
 # 计算平均值
 average_similarity1 = np.mean(similarity_scores1)
 
 # 输出结果
-print(f"经过随机旋转变换之后的皮尔逊相似度: {formatted_similarity_scores1}")
 print(f"经过随机旋转变换之后的平均皮尔逊相似度: {average_similarity1:.7f}")
-# 注意：皮尔逊相关系数的计算是先对向量每一分量减去分量均值，再求余弦相似度。这一操作称为中心化
 
 # 添加随机噪声来模拟数据变换
 X_noisy = X + np.random.normal(0, 0.01, size=X.shape)  # 添加正态分布噪声
