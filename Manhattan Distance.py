@@ -10,7 +10,7 @@ from scipy.ndimage import affine_transform
 from scipy.spatial.distance import cityblock
 from torchvision import datasets, transforms
 
-
+# 定义加载MNIST数据集的函数
 def load_mnist_data(sample_size=None):
     print("Loading MNIST data...")
 
@@ -86,54 +86,64 @@ def compute_distances(X1, X2):
     avg_distance = np.mean(distances)
     return avg_distance
 
-# 计算部分样本与整个数据集的曼哈顿距离
-def compute_sample_to_dataset_distances(X, sample_indices):
-    distances = []
-    for idx in sample_indices:
-        sample = X[idx]
-        for i in range(len(X)):
-            distance = cityblock(sample, X[i])
-            distances.append(distance)
-    avg_distance = np.mean(distances)
-    return avg_distance
-
-
 # 设定用于计算的样本数目
-sample_size = 1000  # 修改这里来设置使用的数据量，None表示使用全部数据
-X, y = load_mnist_data(sample_size=sample_size)
+sample_size = None  # 可以通过修改这个值来调整数据量 None 默认为选取全部数据
+n = 50  # n 表示要进行的计算次数
 
-# 添加随机噪声量
-X_noisy = add_random_noise(X)
+# 初始化列表用于保存每次计算的曼哈顿距离
+all_distances_noisy = []
+all_distances_rotated = []
+all_distances_brightness_adjusted = []
+all_distances_affine_transformed = []
+all_distances_shear_transformed = []
 
-# 随机旋转变换
-X_rotated = random_rotation(X)
+for iteration in range(n):
+    # 每次迭代重新加载数据
+    X, y = load_mnist_data(sample_size=sample_size)
 
-# 亮度调整变换
-X_brightness_adjusted = adjust_brightness(X)
+    # 添加随机噪声量
+    X_noisy = add_random_noise(X)
+    distance_noisy = compute_distances(X, X_noisy)
+    all_distances_noisy.append(distance_noisy)
 
-# 仿射变换
-X_affine_transformed = random_affine_transform(X)
+    # 随机旋转变换
+    X_rotated = random_rotation(X)
+    distance_rotated = compute_distances(X, X_rotated)
+    all_distances_rotated.append(distance_rotated)
 
-# 随机剪切变换
-X_shear_transformed = random_shear_transform(X)
+    # 亮度调整变换
+    X_brightness_adjusted = adjust_brightness(X)
+    distance_brightness_adjusted = compute_distances(X, X_brightness_adjusted)
+    all_distances_brightness_adjusted.append(distance_brightness_adjusted)
 
-# 随机选择样本索引
-sample_indices = np.random.choice(len(X), size=10, replace=False)  # 从数据集中随机选择10个样本
+    # 仿射变换
+    X_affine_transformed = random_affine_transform(X)
+    distance_affine_transformed = compute_distances(X, X_affine_transformed)
+    all_distances_affine_transformed.append(distance_affine_transformed)
 
-# 计算各种变换后的曼哈顿距离
-distance_noisy = compute_distances(X, X_noisy)
-distance_rotated = compute_distances(X, X_rotated)
-distance_brightness_adjusted = compute_distances(X, X_brightness_adjusted)
-distance_affine_transformed = compute_distances(X, X_affine_transformed)
-distance_shear_transformed = compute_distances(X, X_shear_transformed)
+    # 随机剪切变换
+    X_shear_transformed = random_shear_transform(X)
+    distance_shear_transformed = compute_distances(X, X_shear_transformed)
+    all_distances_shear_transformed.append(distance_shear_transformed)
 
-# 计算样本与数据集之间的曼哈顿距离
-distance_sample_to_dataset = compute_sample_to_dataset_distances(X, sample_indices)
+    # 输出每次计算的曼哈顿距离
+    print(f"第 {iteration + 1} 次计算: 经过随机噪声添加后的曼哈顿距离: {distance_noisy:.3f}")
+    print(f"第 {iteration + 1} 次计算: 经过随机旋转操作后的曼哈顿距离: {distance_rotated:.3f}")
+    print(f"第 {iteration + 1} 次计算: 经过亮度调整后的曼哈顿距离: {distance_brightness_adjusted:.3f}")
+    print(f"第 {iteration + 1} 次计算: 经过仿射变换后的曼哈顿距离: {distance_affine_transformed:.3f}")
+    print(f"第 {iteration + 1} 次计算: 经过随机剪切后的曼哈顿距离: {distance_shear_transformed:.3f}")
+    print("\n")
 
-# 输出各个变换的计算结果
-print(f"数据量为 {sample_size} 时，添加随机噪声后的曼哈顿距离: {distance_noisy:.3f}")
-print(f"数据量为 {sample_size} 时，随机旋转变换后的曼哈顿距离: {distance_rotated:.3f}")
-print(f"数据量为 {sample_size} 时，亮度调整变换后的曼哈顿距离: {distance_brightness_adjusted:.3f}")
-print(f"数据量为 {sample_size} 时，仿射变换后的曼哈顿距离: {distance_affine_transformed:.3f}")
-print(f"数据量为 {sample_size} 时，随机剪切变换后的曼哈顿距离: {distance_shear_transformed:.3f}")
-print(f"数据量为 {sample_size} 时，部分样本与数据集之间的曼哈顿距离: {distance_sample_to_dataset:.3f}")
+# 计算 n 次计算后的平均曼哈顿距离
+mean_distance_noisy = np.mean(all_distances_noisy)
+mean_distance_rotated = np.mean(all_distances_rotated)
+mean_distance_brightness_adjusted = np.mean(all_distances_brightness_adjusted)
+mean_distance_affine_transformed = np.mean(all_distances_affine_transformed)
+mean_distance_shear_transformed = np.mean(all_distances_shear_transformed)
+
+# 输出各个变换类型 n 次计算的平均结果
+print(f"（随机噪声） {n} 次计算后的最终平均曼哈顿距离: {mean_distance_noisy:.3f}")
+print(f"（随机旋转） {n} 次计算后的最终平均曼哈顿距离: {mean_distance_rotated:.3f}")
+print(f"（亮度调整） {n} 次计算后的最终平均曼哈顿距离: {mean_distance_brightness_adjusted:.3f}")
+print(f"（仿射变换） {n} 次计算后的最终平均曼哈顿距离: {mean_distance_affine_transformed:.3f}")
+print(f"（随机剪切） {n} 次计算后的最终平均曼哈顿距离: {mean_distance_shear_transformed:.3f}")
