@@ -19,149 +19,133 @@ from scipy.spatial.distance import cosine
 from sklearn.preprocessing import scale
 from sklearn.preprocessing import FunctionTransformer
 
-
 # 加载20 Newsgroups数据集
 categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
 newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
 
-# 只选择一部分数据进行演示
-documents = newsgroups_train.data[:100]
-
-# 初始化文本向量化器
-vectorizer = CountVectorizer()
-X = vectorizer.fit_transform(documents).toarray()
-# 添加随机噪声来模拟数据变换
-X_transformed = X + np.random.normal(0, 0.3, size=X.shape)  # 添加正态分布噪声
-
-
-# 定义余弦相似度函数1（只适用比较两个向量之间的相似度）
+# 定义余弦相似度函数
 def cosine_similarity(vec1, vec2):
+    # 计算两个向量的模长
+    norm_vec1 = np.linalg.norm(vec1)
+    norm_vec2 = np.linalg.norm(vec2)
+
+    # 检查模长是否为零
+    if norm_vec1 == 0 or norm_vec2 == 0:
+        return 0  # 如果其中一个向量为零向量，直接返回相似度为0
+
+    # 否则计算余弦相似度
     return 1 - cosine(vec1, vec2)
 
+# n 次执行的控制变量
+n = 50  # 可以根据需要更改
 
-# 计算余弦相似度数值
-cosine_similarities = []
-for i in range(len(X)):
-    similarity = cosine_similarity(X[i], X_transformed[i])
-    cosine_similarities.append(similarity)
+# num_documents 控制每次执行时选取的数据量
+num_documents = 100  # 可以根据需要更改
 
-# 格式化余弦相似度为小数点后7位的字符串
-formatted_cosine_similarities = ["{:.7f}".format(similarity) for similarity in cosine_similarities]
+# 1. 随机噪声变换
+all_mean_cosine_similarities_noise = []
 
-# 计算所有余弦相似度的总和
-sum_cosine_similarities = sum(cosine_similarities)
+for iteration in range(n):
+    # 每次迭代重新选取不同数量的数据
+    documents = newsgroups_train.data[:num_documents]
+    vectorizer = CountVectorizer()
+    X = vectorizer.fit_transform(documents).toarray()
 
-# 计算平均余弦相似度
-mean_cosine_similarity = sum_cosine_similarities / len(cosine_similarities)
+    X_transformed = X + np.random.normal(0, 0.3, size=X.shape)
+    cosine_similarities = [cosine_similarity(X[i], X_transformed[i]) for i in range(len(X))]
+    mean_cosine_similarity = np.mean(cosine_similarities)
+    all_mean_cosine_similarities_noise.append(mean_cosine_similarity)
+    print(f"第 {iteration + 1} 次计算的平均余弦相似度（随机噪声）: {mean_cosine_similarity:.7f}")
 
-# 输出计算结果
-print(f"经过添加随机噪声之后的余弦相似度: {formatted_cosine_similarities}")
-print(f"经过添加随机噪声之后的平均余弦相似度: {mean_cosine_similarity:.7f}")
+# 计算 n 次后的总平均值
+overall_mean_cosine_similarity_noise = np.mean(all_mean_cosine_similarities_noise)
+print(f"{n} 次计算后的平均余弦相似度（随机噪声）: {overall_mean_cosine_similarity_noise:.7f}")
+print("\n")
 
-# 使用TF-IDF向量化文本数据
-tfidf_vectorizer = TfidfVectorizer(max_features=10000)
-X_tfidf = tfidf_vectorizer.fit_transform(newsgroups_train.data).toarray()
-# 将TF-IDF矩阵reshape成图像形状，这里简单地使用前400个特征作为图像的像素
-image_data = X_tfidf[:, :400].reshape(-1, 20, 20)  # 假设图像大小为20x20
-# 随机旋转图像数据
-rotated_images = []
-for image in image_data:
-    angle = np.random.uniform(-20, 20)  # 随机生成旋转角度
-    rotated = rotate(image, angle, mode='edge')  # 应用旋转变换，使用边缘填充模式
-    rotated_images.append(rotated)
-# 将旋转后的图像数据转换回原始形状
-rotated_images = np.array(rotated_images).reshape(len(image_data), -1)
+# 2. 旋转变换
+all_mean_cosine_similarities_rotation = []
 
-# 进行对比
-# 对比原始数据和旋转后的数据
-# 将图像数据展平为一维数组
-original_data = X_tfidf[:, :400]
-rotated_data = rotated_images[:, :400]
+for iteration in range(n):
+    documents = newsgroups_train.data[:num_documents]
+    tfidf_vectorizer = TfidfVectorizer(max_features=10000)
+    X_tfidf = tfidf_vectorizer.fit_transform(documents).toarray()
+    image_data = X_tfidf[:, :400].reshape(-1, 20, 20)
 
-# 计算数据之间的相似度
-similarity_scores1 = []
-for i in range(len(original_data)):
-    if np.std(original_data[i]) != 0 and np.std(rotated_data[i]) != 0:
-        similarity = np.corrcoef(original_data[i], rotated_data[i])[0, 1]  # 使用皮尔逊相关系数进行去中心化
-    else:
-        similarity = 0  # 标准差为零时，相似度设为0或者其他处理方式
-    similarity_scores1.append(similarity)
+    rotated_images = [rotate(image, np.random.uniform(-20, 20), mode='edge') for image in image_data]
+    rotated_images = np.array(rotated_images).reshape(len(image_data), -1)
+    cosine_similarities = [cosine_similarity(X_tfidf[i, :400], rotated_images[i, :400]) for i in range(len(X_tfidf))]
+    mean_cosine_similarity = np.mean(cosine_similarities)
+    all_mean_cosine_similarities_rotation.append(mean_cosine_similarity)
+    print(f"第 {iteration + 1} 次计算的平均余弦相似度（旋转）: {mean_cosine_similarity:.7f}")
 
-# 计算平均值
-average_similarity1 = np.mean(similarity_scores1)
+# 计算 n 次后的总平均值
+overall_mean_cosine_similarity_rotation = np.mean(all_mean_cosine_similarities_rotation)
+print(f"{n} 次计算后的平均余弦相似度（旋转）: {overall_mean_cosine_similarity_rotation:.7f}")
+print("\n")
 
-# 输出结果
-print(f"经过随机旋转变换之后的平均皮尔逊相似度: {average_similarity1:.7f}")
+# 3. 亮度调整（标准化）
+all_mean_cosine_similarities_brightness = []
 
-# 添加随机噪声来模拟数据变换
-X_noisy = X + np.random.normal(0, 0.01, size=X.shape)  # 添加正态分布噪声
-# 新增亮度调整变换
-X_scaled = scale(X_noisy)  # 使用scale函数进行标准化处理，模拟亮度调整
+for iteration in range(n):
+    documents = newsgroups_train.data[:num_documents]
+    vectorizer = CountVectorizer()
+    X = vectorizer.fit_transform(documents).toarray()
 
-# 计算亮度调整变换前后数据集的平均余弦相似度
-cosine_similarities1 = []
-for i in range(len(X)):
-    similarity = cosine_similarity(X[i], X_scaled[i])
-    cosine_similarities1.append(similarity)
+    X_noisy = X + np.random.normal(0, 0.01, size=X.shape)
+    X_scaled = scale(X_noisy)
+    cosine_similarities = [cosine_similarity(X[i], X_scaled[i]) for i in range(len(X))]
+    mean_cosine_similarity = np.mean(cosine_similarities)
+    all_mean_cosine_similarities_brightness.append(mean_cosine_similarity)
+    print(f"第 {iteration + 1} 次计算的平均余弦相似度（亮度调整）: {mean_cosine_similarity:.7f}")
 
-# 格式划计算结果
-formatted_cosine_similarities1 = ["{:.7f}".format(similarity) for similarity in cosine_similarities1]
-# 计算平均值
-mean_cosine_similarity = np.mean(cosine_similarities1)
+# 计算 n 次后的总平均值
+overall_mean_cosine_similarity_brightness = np.mean(all_mean_cosine_similarities_brightness)
+print(f"{n} 次计算后的平均余弦相似度（亮度调整）: {overall_mean_cosine_similarity_brightness:.7f}")
+print("\n")
 
-# 输出计算结果
-print(f"经过随机亮度调整变换之后的余弦相似度: {formatted_cosine_similarities1}")
-print(f"经过随机亮度调整变换之后的平均余弦相似度: {mean_cosine_similarity:.7f}")
+# 4. 仿射变换
+all_mean_cosine_similarities_affine = []
 
-# 添加随机噪声来模拟对数据进行修改
-X_transformed = X + np.random.normal(0.5, 0.8, size=X.shape)  # 添加正态分布噪声
-# 添加仿射变换过程
-affine_transformer = FunctionTransformer(lambda x: x + np.random.normal(0, 0.1, size=x.shape), validate=False)
-X_affine_transformed = affine_transformer.transform(X)
+for iteration in range(n):
+    documents = newsgroups_train.data[:num_documents]
+    vectorizer = CountVectorizer()
+    X = vectorizer.fit_transform(documents).toarray()
 
-# 计算变换后数据集与原始数据集的平均余弦相似度
-cosine_similarities_affine = []
-for i in range(len(X)):
-    similarity = cosine_similarity(X[i], X_affine_transformed[i])
-    cosine_similarities_affine.append(similarity)
+    affine_transformer = FunctionTransformer(lambda x: x + np.random.normal(0, 0.1, size=x.shape), validate=False)
+    X_affine_transformed = affine_transformer.transform(X)
+    cosine_similarities = [cosine_similarity(X[i], X_affine_transformed[i]) for i in range(len(X))]
+    mean_cosine_similarity = np.mean(cosine_similarities)
+    all_mean_cosine_similarities_affine.append(mean_cosine_similarity)
+    print(f"第 {iteration + 1} 次计算的平均余弦相似度（仿射变换）: {mean_cosine_similarity:.7f}")
 
-# 格式划计算结果
-formatted_cosine_similarities_affine = ["{:.7f}".format(similarity) for similarity in cosine_similarities_affine]
-# 计算平均值
-mean_cosine_similarity_affine = np.mean(cosine_similarities_affine)
+# 计算 n 次后的总平均值
+overall_mean_cosine_similarity_affine = np.mean(all_mean_cosine_similarities_affine)
+print(f"{n} 次计算后的平均余弦相似度（仿射变换）: {overall_mean_cosine_similarity_affine:.7f}")
+print("\n")
 
-# 输出结果
-print(f"经过随机仿射变换之后的余弦相似度: {formatted_cosine_similarities_affine}")
-print(f"经过随机仿射变换之后的平均余弦相似度: {mean_cosine_similarity_affine:.7f}")
+# 5. 随机剪切变换
+all_mean_cosine_similarities_crop = []
 
-
-# 结论：经过反复调整参数 最终得出仿射变换的抗压能力最强
-# 或者说是余弦相似度度量 在对经过仿射变换调整过的文本数据类型数据集进行相似性评估时 效果并不是很理想
-
-# 定义随机剪切函数
 def random_crop(x, crop_ratio=0.5):
     num_features = x.shape[1]
     crop_size = int(num_features * crop_ratio)
     crop_start = np.random.randint(0, num_features - crop_size + 10)
-    x_cropped = x.copy()  # 复制原始向量，避免修改原始数据
-    x_cropped[:, crop_start:crop_start + crop_size] = 0.5  # 将随机选择的部分置零
+    x_cropped = x.copy()
+    x_cropped[:, crop_start:crop_start + crop_size] = 0.5
     return x_cropped
 
+for iteration in range(n):
+    documents = newsgroups_train.data[:num_documents]
+    vectorizer = CountVectorizer()
+    X = vectorizer.fit_transform(documents).toarray()
 
-# 添加随机剪切操作
-X_cropped = random_crop(X)
+    X_cropped = random_crop(X)
+    cosine_similarities = [cosine_similarity(X[i], X_cropped[i]) for i in range(len(X))]
+    mean_cosine_similarity = np.mean(cosine_similarities)
+    all_mean_cosine_similarities_crop.append(mean_cosine_similarity)
+    print(f"第 {iteration + 1} 次计算的平均余弦相似度（随机剪切）: {mean_cosine_similarity:.7f}")
 
-# 计算剪切后数据集与原始数据集的平均余弦相似度
-cosine_similarities_cropped = []
-for i in range(len(X)):
-    similarity = cosine_similarity(X[i], X_cropped[i])
-    cosine_similarities_cropped.append(similarity)
-
-# 格式划计算结果
-formatted_cosine_similarities_cropped = ["{:.7f}".format(similarity) for similarity in cosine_similarities_cropped]
-# 计算平均值
-mean_cosine_similarities_cropped = np.mean(cosine_similarities_cropped)
-
-# 输出结果
-print(f"经过随机剪切变换之后的余弦相似度: {formatted_cosine_similarities_cropped}")
-print(f"经过随机剪切变换之后的平均余弦相似度: {mean_cosine_similarities_cropped:.7f}")
+# 计算 n 次后的总平均值
+overall_mean_cosine_similarity_crop = np.mean(all_mean_cosine_similarities_crop)
+print(f"{n} 次计算后的平均余弦相似度（随机剪切）: {overall_mean_cosine_similarity_crop:.7f}")
+print("\n")
