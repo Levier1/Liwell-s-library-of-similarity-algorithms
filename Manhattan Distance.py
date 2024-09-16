@@ -35,13 +35,11 @@ def load_mnist_data(sample_size=None):
     print("MNIST data loaded")
     return X, y
 
-
 # 添加随机噪声量
 def add_random_noise(X, noise_level=0.1):
     noise = np.random.normal(scale=noise_level, size=X.shape)
     X_noisy = X + noise
     return X_noisy
-
 
 # 随机旋转变换
 def random_rotation(X, max_angle=25):
@@ -51,12 +49,10 @@ def random_rotation(X, max_angle=25):
         X_rotated[i] = rotate(X[i].reshape(28, 28), angles[i], reshape=False).flatten()
     return X_rotated
 
-
 # 亮度调整变换
 def adjust_brightness(X, brightness_factor=0.5):
     X_adjusted = np.clip(X * brightness_factor, 0, 255).astype(np.uint8)
     return X_adjusted
-
 
 # 仿射变换
 def random_affine_transform(X, shear_range=0.2, scale_range=0.2, translation_range=0.2):
@@ -82,12 +78,22 @@ def random_shear_transform(X, shear_range=0.2):
 def compute_distances(X1, X2):
     distances = []
     for i in range(len(X1)):
-        distances.append(cityblock(X1[i], X2[i]))
+        distances.append(cityblock(X1[i].flatten(), X2[i].flatten()))  # 确保传入的是一维向量
+    avg_distance = np.mean(distances)
+    return avg_distance
+
+# 添加基线对比的函数，随机选择一组数据并计算与原始数据的曼哈顿距离
+def compute_baseline_distances(X, sample_size):
+    random_indices = np.random.choice(len(X), size=sample_size, replace=False)
+    X_baseline = X[random_indices]
+    distances = []
+    for i in range(len(X_baseline)):
+        distances.append(cityblock(X[i].flatten(), X_baseline[i].flatten()))  # 一维化处理
     avg_distance = np.mean(distances)
     return avg_distance
 
 # 设定用于计算的样本数目
-sample_size = None  # 可以通过修改这个值来调整数据量 None 默认为选取全部数据
+sample_size = 100  # 可以通过修改这个值来调整数据量 None 默认为选取全部数据
 n = 50  # n 表示要进行的计算次数
 
 # 初始化列表用于保存每次计算的曼哈顿距离
@@ -96,6 +102,7 @@ all_distances_rotated = []
 all_distances_brightness_adjusted = []
 all_distances_affine_transformed = []
 all_distances_shear_transformed = []
+all_distances_baseline = []  # 用于保存基线对比的曼哈顿距离
 
 for iteration in range(n):
     # 每次迭代重新加载数据
@@ -126,12 +133,17 @@ for iteration in range(n):
     distance_shear_transformed = compute_distances(X, X_shear_transformed)
     all_distances_shear_transformed.append(distance_shear_transformed)
 
+    # 计算基线对比：随机选择未经变换的数据集并计算曼哈顿距离
+    distance_baseline = compute_baseline_distances(X, sample_size)
+    all_distances_baseline.append(distance_baseline)
+
     # 输出每次计算的曼哈顿距离
     print(f"第 {iteration + 1} 次计算: 经过随机噪声添加后的曼哈顿距离: {distance_noisy:.3f}")
     print(f"第 {iteration + 1} 次计算: 经过随机旋转操作后的曼哈顿距离: {distance_rotated:.3f}")
     print(f"第 {iteration + 1} 次计算: 经过亮度调整后的曼哈顿距离: {distance_brightness_adjusted:.3f}")
     print(f"第 {iteration + 1} 次计算: 经过仿射变换后的曼哈顿距离: {distance_affine_transformed:.3f}")
     print(f"第 {iteration + 1} 次计算: 经过随机剪切后的曼哈顿距离: {distance_shear_transformed:.3f}")
+    print(f"基线对比（随机选择）曼哈顿距离: {distance_baseline:.3f}")
     print("\n")
 
 # 计算 n 次计算后的平均曼哈顿距离
@@ -140,6 +152,7 @@ mean_distance_rotated = np.mean(all_distances_rotated)
 mean_distance_brightness_adjusted = np.mean(all_distances_brightness_adjusted)
 mean_distance_affine_transformed = np.mean(all_distances_affine_transformed)
 mean_distance_shear_transformed = np.mean(all_distances_shear_transformed)
+mean_distance_baseline = np.mean(all_distances_baseline)
 
 # 输出各个变换类型 n 次计算的平均结果
 print(f"（随机噪声） {n} 次计算后的最终平均曼哈顿距离: {mean_distance_noisy:.3f}")
@@ -147,3 +160,4 @@ print(f"（随机旋转） {n} 次计算后的最终平均曼哈顿距离: {mean
 print(f"（亮度调整） {n} 次计算后的最终平均曼哈顿距离: {mean_distance_brightness_adjusted:.3f}")
 print(f"（仿射变换） {n} 次计算后的最终平均曼哈顿距离: {mean_distance_affine_transformed:.3f}")
 print(f"（随机剪切） {n} 次计算后的最终平均曼哈顿距离: {mean_distance_shear_transformed:.3f}")
+print(f"基线对比（随机选择） {n} 次计算后的最终平均曼哈顿距离: {mean_distance_baseline:.3f}")
