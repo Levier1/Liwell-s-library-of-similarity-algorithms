@@ -40,7 +40,7 @@ def cosine_similarity(vec1, vec2):
 n = 50  # 可以根据需要更改
 
 # num_documents 控制每次执行时选取的数据量
-num_documents = 100  # 可以根据需要更改
+num_documents = 5000  # 可以根据需要更改
 
 # 1. 随机噪声变换
 all_mean_cosine_similarities_noise = []
