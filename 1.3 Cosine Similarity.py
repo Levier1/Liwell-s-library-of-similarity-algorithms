@@ -20,8 +20,10 @@ from sklearn.preprocessing import scale
 from sklearn.preprocessing import FunctionTransformer
 
 # 加载20 Newsgroups数据集
-categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
-newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)
+newsgroups_train = fetch_20newsgroups(subset='train')
+
+# 输出数据集中样本的数量
+print(f"数据集中样本的数量: {len(newsgroups_train.data)}")
 
 # 定义余弦相似度函数
 def cosine_similarity(vec1, vec2):
@@ -40,7 +42,7 @@ def cosine_similarity(vec1, vec2):
 n = 50  # 可以根据需要更改
 
 # num_documents 控制每次执行时选取的数据量
-num_documents = 5000  # 可以根据需要更改
+num_documents = 100  # 可以根据需要更改
 
 # 1. 随机噪声变换
 all_mean_cosine_similarities_noise = []
